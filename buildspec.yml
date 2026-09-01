@@ -8,45 +8,27 @@ env:
 phases:
   pre_build:
     commands:
-      - echo "=== PRE BUILD STARTED ==="
-      - echo "AWS Region: $AWS_DEFAULT_REGION"
-      - echo "ECR Repository: $ECR_REPOSITORY"
-
-      - echo "Getting AWS Account ID..."
+      - echo "Starting pre-build phase"
+      - echo "AWS Region is $AWS_DEFAULT_REGION"
+      - echo "ECR Repository is $ECR_REPOSITORY"
       - AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-
-      - echo "AWS Account ID: $AWS_ACCOUNT_ID"
-
-      - ECR_REGISTRY="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com"
-
-      - echo "ECR Registry: $ECR_REGISTRY"
-
-      - echo "Testing ECR access..."
-      - aws ecr describe-repositories --repository-names "$ECR_REPOSITORY" --region "$AWS_DEFAULT_REGION"
-
-      - echo "Logging in to Amazon ECR..."
-      - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
-
+      - echo "AWS Account ID is $AWS_ACCOUNT_ID"
+      - ECR_REGISTRY=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - echo "ECR Registry is $ECR_REGISTRY"
+      - aws ecr describe-repositories --repository-names $ECR_REPOSITORY --region $AWS_DEFAULT_REGION
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
       - echo "ECR login successful"
 
   build:
     commands:
-      - echo "=== BUILD STARTED ==="
-      - echo "Building Docker image..."
-      - docker build -t "$ECR_REPOSITORY:latest" .
-
+      - echo "Starting Docker build"
+      - docker build -t brain-task-app .
       - echo "Docker image built successfully"
-
-      - echo "Tagging Docker image..."
-      - docker tag "$ECR_REPOSITORY:latest" "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
-
+      - docker tag brain-task-app $ECR_REGISTRY/brain-task-app:latest
       - echo "Docker image tagged successfully"
 
   post_build:
     commands:
-      - echo "=== POST BUILD STARTED ==="
-      - echo "Pushing Docker image to ECR..."
-      - docker push "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
-
+      - echo "Pushing Docker image to ECR"
+      - docker push $ECR_REGISTRY/brain-task-app:latest
       - echo "Docker image pushed successfully"
-      - echo "=== BUILD COMPLETED ==="
