@@ -1,0 +1,56 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: "ap-south-1"
+    ECR_REPOSITORY: "brain-task-app"
+
+phases:
+
+  pre_build:
+    commands:
+      - echo "Starting pre-build phase..."
+      - echo "AWS Region: $AWS_DEFAULT_REGION"
+      - echo "ECR Repository: $ECR_REPOSITORY"
+
+      - echo "Getting AWS Account ID..."
+      - AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+
+      - echo "AWS Account ID: $AWS_ACCOUNT_ID"
+
+      - ECR_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$ECR_REPOSITORY
+
+      - echo "ECR URI: $ECR_URI"
+
+      - echo "Logging in to Amazon ECR..."
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+
+      - echo "ECR login successful"
+
+  build:
+    commands:
+      - echo "Starting Docker build..."
+      - echo "Build started on $(date)"
+
+      - docker build -t $ECR_REPOSITORY:latest .
+
+      - echo "Docker image built successfully"
+
+      - docker tag $ECR_REPOSITORY:latest $ECR_URI:latest
+
+      - echo "Docker image tagged successfully"
+
+  post_build:
+    commands:
+      - echo "Pushing Docker image to Amazon ECR..."
+
+      - docker push $ECR_URI:latest
+
+      - echo "Docker image pushed successfully"
+
+      - echo "Creating deployment artifact..."
+
+artifacts:
+  files:
+    - k8s/deployment.yaml
+    - k8s/service.yaml
