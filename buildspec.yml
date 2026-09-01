@@ -57,7 +57,7 @@ phases:
       - kubectl apply -f k8s/service.yaml
 
       - echo "Checking Kubernetes deployment"
-      - kubectl rollout status deployment/brain-task-deployment --timeout=180s
+      - kubectl rollout status deployment/brain-task-app --timeout=180s
 
       - echo "Checking Kubernetes pods"
       - kubectl get pods
